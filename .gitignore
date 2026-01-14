@@ -1,0 +1,19 @@
+# Archivos de Python
+__pycache__/
+*.py[cod]
+*.pyc
+
+# Scripts de generación (no necesarios en GitHub Pages)
+generar_calendarios.py
+actualizar_calendarios.py
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Archivos de desarrollo
+*.log
+.vscode/
+.idea/

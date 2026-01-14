@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organizate 2026</title>
+
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="Sistema de organización diaria con calendarios interactivos">
+    <meta name="theme-color" content="#00ff41">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Organizate">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192x192.png">
+    <link rel="apple-touch-icon" href="./icons/icon-512x512.png">
+
+    <style>
+        :root {
+            --bg-color: #000000;
+            --text-color: #e0e0e0;
+            --accent-color: #00ff41;
+            /* Terminal Green */
+            --border-color: #333;
+            --font-main: 'Courier New', Courier, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-main);
+            line-height: 1.5;
+            padding: 20px;
+        }
+
+        /* Layout Utilities */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        /* Mobile First (Default) -> Desktop Override */
+        @media (min-width: 768px) {
+            .grid-main {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        /* UI Components */
+        .card {
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            background: #0a0a0a;
+        }
+
+        h2,
+        label {
+            color: var(--accent-color);
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            display: block;
+            font-weight: bold;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 10px;
+            font-family: inherit;
+            margin-bottom: 10px;
+            resize: vertical;
+        }
+
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        /* Header Specifics */
+        .header-controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            margin-bottom: 20px;
+        }
+
+        .control-group {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        /* Agenda Specifics */
+        .agenda-row {
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .agenda-time {
+            width: 60px;
+            color: var(--accent-color);
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
+        .agenda-input {
+            border: none;
+            margin-bottom: 0;
+        }
+
+        /* Button Group */
+        .btn-group {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background: var(--border-color);
+            color: white;
+            border: 1px solid var(--border-color);
+            padding: 10px 20px;
+            cursor: pointer;
+            font-family: inherit;
+            text-transform: uppercase;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        button.btn-download {
+            border-color: var(--accent-color);
+        }
+
+        button.btn-clear {
+            border-color: #ff3333;
+            color: #ff3333;
+        }
+
+        button.btn-clear:hover {
+            background: #ff3333;
+            color: black;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="card header-controls">
+            <div class="control-group">
+                <label>Fecha</label>
+                <input type="date" id="dateInput">
+            </div>
+            <div class="control-group">
+                <label>Inicio (H)</label>
+                <input type="number" id="startHour" min="0" max="23" value="9">
+            </div>
+            <div class="control-group">
+                <label>Fin (H)</label>
+                <input type="number" id="endHour" min="0" max="23" value="18">
+            </div>
+        </div>
+
+        <div class="grid grid-main">
+
+            <div class="grid">
+                <div class="card">
+                    <h2>Trash / Pendings (Brain Dump)</h2>
+                    <textarea id="trashInput" rows="15"
+                        placeholder="Escribe todo lo que tengas en la cabeza..."></textarea>
+                </div>
+                <div class="card">
+                    <h2>Daily Actions (Prioridad)</h2>
+                    <textarea id="actionsInput" rows="10"
+                        placeholder="- Acción 1&#10;- Acción 2&#10;- Acción 3"></textarea>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Agenda por Hora</h2>
+                <div id="agendaContainer">
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button onclick="app.save()" id="btnSave">[ Save ]</button>
+            <button onclick="app.download()" class="btn-download">[ Download .html ]</button>
+            <button onclick="app.clear()" class="btn-clear">[ Clear ]</button>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * Trash-Pendings Logic
+         * Principles: KISS, No Dependencies.
+         */
+        const app = {
+            // DOM Elements
+            els: {
+                date: document.getElementById('dateInput'),
+                start: document.getElementById('startHour'),
+                end: document.getElementById('endHour'),
+                trash: document.getElementById('trashInput'),
+                actions: document.getElementById('actionsInput'),
+                agenda: document.getElementById('agendaContainer')
+            },
+
+            init() {
+                // Check for date parameter in URL (from calendar click)
+                const urlParams = new URLSearchParams(window.location.search);
+                const dateParam = urlParams.get('date');
+
+                if (dateParam) {
+                    // Load specific date from URL
+                    this.els.date.value = dateParam;
+                    this.loadDateData(dateParam);
+                } else {
+                    // Set Default Date if empty
+                    if (!this.els.date.value) {
+                        this.els.date.valueAsDate = new Date();
+                    }
+                    // Load data or Render default
+                    this.load();
+                }
+
+                // Listeners
+                this.els.start.addEventListener('change', () => this.renderAgenda());
+                this.els.end.addEventListener('change', () => this.renderAgenda());
+            },
+
+            /**
+             * Renders agenda rows based on start/end time.
+             * Preserves data in existing rows if range changes slightly.
+             */
+            renderAgenda(savedData = {}) {
+                const start = parseInt(this.els.start.value);
+                const end = parseInt(this.els.end.value);
+                const currentData = savedData || this.getAgendaData(); // Use passed data or scrape current DOM
+
+                this.els.agenda.innerHTML = '';
+
+                for (let i = start; i <= end; i++) {
+                    const timeLabel = `${i.toString().padStart(2, '0')}:00`;
+                    const row = document.createElement('div');
+                    row.className = 'agenda-row';
+
+                    const timeDiv = document.createElement('div');
+                    timeDiv.className = 'agenda-time';
+                    timeDiv.textContent = timeLabel;
+
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.className = 'agenda-input';
+                    input.dataset.time = i; // Key for binding
+                    input.value = currentData[i] || ''; // Restore text if exists
+
+                    row.appendChild(timeDiv);
+                    row.appendChild(input);
+                    this.els.agenda.appendChild(row);
+                }
+            },
+
+            /**
+             * Scrapes current values from agenda inputs
+             */
+            getAgendaData() {
+                const data = {};
+                document.querySelectorAll('.agenda-input').forEach(input => {
+                    data[input.dataset.time] = input.value;
+                });
+                return data;
+            },
+
+            save() {
+                const dateKey = this.els.date.value;
+                const data = {
+                    date: dateKey,
+                    start: this.els.start.value,
+                    end: this.els.end.value,
+                    trash: this.els.trash.value,
+                    actions: this.els.actions.value,
+                    agenda: this.getAgendaData()
+                };
+
+                // Save data for this specific date
+                localStorage.setItem(`organizate_day_${dateKey}`, JSON.stringify(data));
+
+                // Mark this date as saved
+                this.markDateInCalendar(dateKey);
+
+                // Visual Feedback (Minimalist)
+                const btn = document.getElementById('btnSave');
+                const originalText = btn.textContent;
+                btn.textContent = '[ Saved! ]';
+                btn.style.color = 'var(--accent-color)';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.color = '';
+                }, 1000);
+            },
+
+            load() {
+                const raw = localStorage.getItem('trashPendingsData');
+                if (raw) {
+                    const data = JSON.parse(raw);
+                    this.els.date.value = data.date;
+                    this.els.start.value = data.start;
+                    this.els.end.value = data.end;
+                    this.els.trash.value = data.trash;
+                    this.els.actions.value = data.actions;
+                    this.renderAgenda(data.agenda);
+                } else {
+                    this.renderAgenda();
+                }
+            },
+
+            markDateInCalendar(dateStr) {
+                if (!dateStr) return;
+
+                // Get list of saved dates
+                let savedDates = JSON.parse(localStorage.getItem('organizate_savedDates') || '[]');
+
+                // Add date if not exists
+                if (!savedDates.includes(dateStr)) {
+                    savedDates.push(dateStr);
+                    localStorage.setItem('organizate_savedDates', JSON.stringify(savedDates));
+                }
+            },
+
+            loadDateData(dateStr) {
+                // Load data for specific date
+                const raw = localStorage.getItem(`organizate_day_${dateStr}`);
+                if (raw) {
+                    const data = JSON.parse(raw);
+                    this.els.start.value = data.start;
+                    this.els.end.value = data.end;
+                    this.els.trash.value = data.trash;
+                    this.els.actions.value = data.actions;
+                    this.renderAgenda(data.agenda);
+                } else {
+                    // No data for this date, render empty
+                    this.renderAgenda();
+                }
+            },
+
+            clear() {
+                if (confirm('Are you sure you want to clear all data?')) {
+                    localStorage.removeItem('trashPendingsData');
+                    this.els.trash.value = '';
+                    this.els.actions.value = '';
+                    // Reset to defaults
+                    this.els.start.value = 9;
+                    this.els.end.value = 18;
+                    this.renderAgenda();
+                }
+            },
+
+            download() {
+                // 1. Prepare DOM for export (Update attributes so they persist in HTML source)
+                this.els.trash.innerHTML = this.els.trash.value;
+                this.els.actions.innerHTML = this.els.actions.value;
+                this.els.date.setAttribute('value', this.els.date.value);
+                this.els.start.setAttribute('value', this.els.start.value);
+                this.els.end.setAttribute('value', this.els.end.value);
+
+                document.querySelectorAll('.agenda-input').forEach(input => {
+                    input.setAttribute('value', input.value);
+                });
+
+                // 2. Serialize
+                const htmlContent = document.documentElement.outerHTML;
+
+                // 3. Create Blob
+                const blob = new Blob([htmlContent], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+
+                // 4. Trigger Download
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `trash-pendings-${this.els.date.value || 'backup'}.html`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+        };
+
+        // Start
+        app.init();
+
+        // 🆕 Registrar Service Worker para PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(registration => {
+                        console.log('✅ Service Worker registrado:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('❌ Error al registrar Service Worker:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+
+</html>

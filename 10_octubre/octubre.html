@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Octubre 2026</title>
+    <style>
+        :root {
+            --bg-color: #000000;
+            --text-color: #e0e0e0;
+            --accent-color: #00ff41;
+            --border-color: #333;
+            --font-main: 'Courier New', Courier, monospace;
+            --weekend-color: #ff6b6b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-main);
+            line-height: 1.5;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container { max-width: 900px; margin: 0 auto; }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            background: #0a0a0a;
+        }
+
+        .header h1 {
+            color: var(--accent-color);
+            text-transform: uppercase;
+            font-size: 2rem;
+            letter-spacing: 5px;
+        }
+
+        .header .year { color: var(--text-color); font-size: 1.2rem; opacity: 0.7; }
+
+        .calendar { border: 1px solid var(--border-color); background: #0a0a0a; }
+
+        .weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            border-bottom: 2px solid var(--accent-color);
+        }
+
+        .weekday {
+            padding: 15px 10px;
+            text-align: center;
+            color: var(--accent-color);
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+
+        .weekday.weekend { color: var(--weekend-color); }
+
+        .days { display: grid; grid-template-columns: repeat(7, 1fr); }
+
+        .day {
+            aspect-ratio: 1;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 8px;
+            min-height: 80px;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .day:hover:not(.empty) { border-color: var(--accent-color); background: #111; }
+        .day.empty { background: #050505; }
+        .day.weekend .day-number { color: var(--weekend-color); }
+        .day-number { font-size: 1.2rem; font-weight: bold; color: var(--text-color); }
+
+        /* 🆕 Estilos para días clickeables con datos */
+        .day.has-data { cursor: pointer; }
+        .day.has-data:hover { background: #1a1a1a; box-shadow: 0 0 15px rgba(0, 255, 65, 0.3); }
+
+        /* 🆕 Marquita visual */
+        .day-marker {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 8px;
+            height: 8px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent-color);
+            animation: pulse 2s infinite;
+            pointer-events: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .legend {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            background: #0a0a0a;
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; }
+        .legend-color { width: 20px; height: 20px; border: 1px solid var(--border-color); }
+
+        .nav-links {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .nav-links a {
+            color: var(--accent-color);
+            text-decoration: none;
+            padding: 10px 20px;
+            border: 1px solid var(--border-color);
+            background: #0a0a0a;
+            transition: all 0.2s;
+        }
+
+        .nav-links a:hover { border-color: var(--accent-color); background: #111; }
+        .nav-links a.disabled { opacity: 0.3; pointer-events: none; }
+
+        @media (max-width: 600px) {
+            .day { min-height: 60px; padding: 5px; }
+            .day-number { font-size: 1rem; }
+            .header h1 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div class="year">2026</div>
+        <h1>Octubre</h1>
+    </div>
+
+    <div class="calendar">
+        <div class="weekdays">
+            <div class="weekday weekend">Dom</div>
+            <div class="weekday">Lun</div>
+            <div class="weekday">Mar</div>
+            <div class="weekday">Mié</div>
+            <div class="weekday">Jue</div>
+            <div class="weekday">Vie</div>
+            <div class="weekday weekend">Sáb</div>
+        </div>
+        <div class="days" id="daysContainer">
+            <!-- Días generados dinámicamente con JavaScript -->
+        </div>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-color" style="background: var(--weekend-color);"></div>
+            <span>Fin de semana</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: var(--accent-color); border-radius: 50%;"></div>
+            <span>Día con datos (click para abrir)</span>
+        </div>
+    </div>
+
+    <div class="nav-links">
+        <a href="../09_septiembre/septiembre.html">← Anterior</a>
+        <a href="../index.html">🏠 Inicio</a>
+        <a href="../11_noviembre/noviembre.html">Siguiente →</a>
+    </div>
+</div>
+
+<script>
+// Datos del mes de Octubre 2026
+const monthData = {
+    year: 2026,
+    month: 9, // 9 = Octubre en JavaScript (0-indexed)
+    startDay: 3, // 0=Dom, 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie, 6=Sáb
+    totalDays: 31
+};
+
+function renderCalendar() {
+    const container = document.getElementById('daysContainer');
+    
+    // Obtener fechas guardadas desde localStorage
+    const savedDates = JSON.parse(localStorage.getItem('organizate_savedDates') || '[]');
+    
+    // Días vacíos al inicio
+    for (let i = 0; i < monthData.startDay; i++) {
+        const emptyDay = document.createElement('div');
+        emptyDay.className = 'day empty';
+        container.appendChild(emptyDay);
+    }
+    
+    // Días del mes
+    for (let day = 1; day <= monthData.totalDays; day++) {
+        const dayDiv = document.createElement('div');
+        const dayOfWeek = (monthData.startDay + day - 1) % 7;
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+        
+        dayDiv.className = isWeekend ? 'day weekend' : 'day';
+        
+        // Número del día
+        const numberSpan = document.createElement('span');
+        numberSpan.className = 'day-number';
+        numberSpan.textContent = day;
+        dayDiv.appendChild(numberSpan);
+        
+        // 🆕 Verificar si este día tiene datos guardados
+        const dateStr = `${monthData.year}-${String(monthData.month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        if (savedDates.includes(dateStr)) {
+            // Agregar clase y marquita
+            dayDiv.classList.add('has-data');
+            
+            const marker = document.createElement('div');
+            marker.className = 'day-marker';
+            marker.title = `Datos guardados: ${dateStr}`;
+            dayDiv.appendChild(marker);
+            
+            // 🆕 CLICKEABLE: Redirigir a index.html con fecha
+            dayDiv.addEventListener('click', () => {
+                window.location.href = `../index.html?date=${dateStr}`;
+            });
+        }
+        
+        container.appendChild(dayDiv);
+    }
+}
+
+// Renderizar al cargar
+renderCalendar();
+</script>
+
+</body>
+</html>
