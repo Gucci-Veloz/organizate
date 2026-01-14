@@ -81,11 +81,9 @@
         .day.weekend .day-number { color: var(--weekend-color); }
         .day-number { font-size: 1.2rem; font-weight: bold; color: var(--text-color); }
 
-        /* 🆕 Estilos para días clickeables con datos */
         .day.has-data { cursor: pointer; }
         .day.has-data:hover { background: #1a1a1a; box-shadow: 0 0 15px rgba(0, 255, 65, 0.3); }
 
-        /* 🆕 Marquita visual */
         .day-marker {
             position: absolute;
             top: 5px;
@@ -163,7 +161,6 @@
             <div class="weekday weekend">Sáb</div>
         </div>
         <div class="days" id="daysContainer">
-            <!-- Días generados dinámicamente con JavaScript -->
         </div>
     </div>
 
@@ -186,28 +183,23 @@
 </div>
 
 <script>
-// Datos del mes de Marzo 2026
 const monthData = {
     year: 2026,
-    month: 2, // 2 = Marzo en JavaScript (0-indexed)
-    startDay: 6, // 0=Dom, 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie, 6=Sáb
+    month: 2,
+    startDay: 0,
     totalDays: 31
 };
 
 function renderCalendar() {
     const container = document.getElementById('daysContainer');
-    
-    // Obtener fechas guardadas desde localStorage
     const savedDates = JSON.parse(localStorage.getItem('organizate_savedDates') || '[]');
     
-    // Días vacíos al inicio
     for (let i = 0; i < monthData.startDay; i++) {
         const emptyDay = document.createElement('div');
         emptyDay.className = 'day empty';
         container.appendChild(emptyDay);
     }
     
-    // Días del mes
     for (let day = 1; day <= monthData.totalDays; day++) {
         const dayDiv = document.createElement('div');
         const dayOfWeek = (monthData.startDay + day - 1) % 7;
@@ -215,16 +207,13 @@ function renderCalendar() {
         
         dayDiv.className = isWeekend ? 'day weekend' : 'day';
         
-        // Número del día
         const numberSpan = document.createElement('span');
         numberSpan.className = 'day-number';
         numberSpan.textContent = day;
         dayDiv.appendChild(numberSpan);
         
-        // 🆕 Verificar si este día tiene datos guardados
         const dateStr = `${monthData.year}-${String(monthData.month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         if (savedDates.includes(dateStr)) {
-            // Agregar clase y marquita
             dayDiv.classList.add('has-data');
             
             const marker = document.createElement('div');
@@ -232,7 +221,6 @@ function renderCalendar() {
             marker.title = `Datos guardados: ${dateStr}`;
             dayDiv.appendChild(marker);
             
-            // 🆕 CLICKEABLE: Redirigir a index.html con fecha
             dayDiv.addEventListener('click', () => {
                 window.location.href = `../index.html?date=${dateStr}`;
             });
@@ -242,7 +230,6 @@ function renderCalendar() {
     }
 }
 
-// Renderizar al cargar
 renderCalendar();
 </script>
 

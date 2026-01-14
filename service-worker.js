@@ -1,5 +1,5 @@
 // Service Worker para Organizate PWA
-const CACHE_NAME = 'organizate-v2'; // 🆕 Versión actualizada para forzar refresh
+const CACHE_NAME = 'organizate-v3'; // 🔧 Calendarios corregidos con días exactos
 const urlsToCache = [
     './',
     './index.html',
